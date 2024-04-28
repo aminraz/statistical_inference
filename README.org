@@ -1,0 +1,339 @@
+#+property: header-args:python :session *emission* 
+Carbon emission data in this analysis come from the Global Carbon
+Project's fossil CO2 emission dataset:2022 release. The dataset is
+available in Kaggle through this [[https://www.kaggle.com/datasets/thedevastator/global-fossil-co2-emissions-by-country-2002-2022/code][link]].
+
+In this analysis, we use data for carbon emission for all countries
+and try to find the list of the most aggressive carbon emitters. We
+focus on the last year reported in the data which is 2021.
+
+* Reading csv file
+We first import some required packages:
+#+begin_src python
+  import pandas as pd
+  import numpy as np
+  import matplotlib.pyplot as plt
+#+end_src
+
+#+RESULTS:
+
+Data from a csv file is read and stored into a Pandas data frame:
+#+begin_src python
+  df = pd.read_csv("~/Downloads/emission/GCB2022v27_MtCO2_flat.csv")
+  df.columns
+#+end_src
+
+#+RESULTS:
+: Index(['Country', 'ISO 3166-1 alpha-3', 'Year', 'Total', 'Coal', 'Oil', 'Gas',
+:        'Cement', 'Flaring', 'Other', 'Per Capita'],
+:       dtype='object')
+
+* Comparing per capita emission data
+
+We first like to know the list of countries in the dataframe. The last
+two items listed in the country column are International Transport and
+Global and we won't counted them as country obviously.
+
+#+begin_src python :results output
+  index_max= len(df.index)-1
+  list_count=[df.Country[i] for i in range(index_max) if df.Country[i]!=df.Country[i+1]]
+  list_count.pop(-1)
+  print("Total number of countries in the list:",len(list_count))
+#+end_src
+
+#+RESULTS:
+: Total number of countries in the list: 230
+
+With inspecting data frame, we realize there are some countries with
+zero total emission in 2021:
+
+#+begin_src python :results output
+  zero_list=df[(df['Year']==2021) & (df['Total']==0)]['Country']
+  print(zero_list.values)
+#+end_src
+
+#+RESULTS:
+
+: ['Antarctica' 'Christmas Island' 'Panama Canal Zone'
+:  'French Equatorial Africa' 'French West Africa' 'Kuwaiti Oil Fires'
+:  'Leeward Islands' 'Pacific Islands (Palau)' 'Puerto Rico'
+:  'Ryukyu Islands' 'St. Kitts-Nevis-Anguilla']
+
+We filter these countries from our list since such countries are not
+contributing to global emission. We store our list of  emission per capita
+for 2021 for non-zero emitters into ~list_pc~:
+#+begin_src python
+  list_pc=df[(df['Year']==2021) & (df['Total']!=0) ]['Per Capita']
+  list_pc=list_pc[:-2]
+#+end_src
+
+#+RESULTS:
+
+
+To find the top twenty countries with the highest emission per capita:
+
+#+begin_src python :results output
+  pc_sorted=list_pc.sort_values()
+  print(df.iloc[pc_sorted.index[-20:]]['Country'].values[-1::-1])
+#+end_src
+
+#+RESULTS:
+
+: ['Qatar' 'Bahrain' 'Kuwait' 'Trinidad and Tobago' 'Brunei Darussalam'
+:  'United Arab Emirates' 'New Caledonia' 'Saudi Arabia' 'Oman' 'Australia'
+:  'Mongolia' 'USA' 'Sint Maarten (Dutch part)' 'Kazakhstan' 'Canada'
+:  'Palau' 'Faeroe Islands' 'Turkmenistan' 'Luxembourg' 'Russia']
+
+* Histogram
+A histogram helps us to see how data is distributed:
+
+#+begin_src python :results file
+  plt.close("all")
+  fig= plt.figure()
+  ax=list_pc.plot.hist()
+  ax.set_facecolor("lightgray")
+  fig.set_facecolor("lightgray")
+  ax.set(xlabel="Emission per capita (metric ton)")
+  file_name="pc_histogram.svg"
+  plt.savefig(file_name)
+  file_name
+#+end_src
+
+
+#+RESULTS:
+
+[[file:pc_histogram.svg]]
+
+Histogram shows that most countries have low emission per capita. It
+also shows that the distribution of emission per capita is highly skewed.
+
+* Boxplots for emission per capita
+A boxplot is a common way to asses data distribution and finding
+outliers in data. We plot a boxplot below:
+
+#+begin_src python :results file
+  plt.close("all")
+  fig, ax = plt.subplots()
+  ax=list_pc.plot.box()
+  ax.set(ylabel="Emission per capita (metric ton)")
+  ax.set_facecolor("lightgray")  
+  fig.set_facecolor("lightgray")  
+  file_name='pc_box.svg'
+  plt.savefig(file_name)
+  file_name
+#+end_src
+
+#+RESULTS:
+
+[[file:pc_box.svg]]
+
+Looking into the boxplot the following points can be deduced:
+- Data is skewed positively
+- We have outliers in the higher end of emission range
+
+In a boxplot the criterion for being an outlier is to be 1.5*IQR away
+from Q1 or Q3 in the outward direction. Q1 and Q3 are first and third
+quartiles respectively. IQR stands for Inter Quartile Range and is
+defined as Q3-Q1. The whiskers in the boxplot show the last data point
+within the range of not being an outlier. On the other hand, single
+data points show outliers.
+
+To find the outliers we use numpy package as follows:
+
+#+begin_src python :results output
+  Q1=np.percentile(list_pc,25)
+  Q3=np.percentile(list_pc,75)
+  IQR=Q3-Q1
+  print("Q1 =",Q1, ", Q3 =",Q3,", IQR =", IQR)
+#+end_src
+
+#+RESULTS:
+
+: Q1 = 0.973125 , Q3 = 5.817651 , IQR = 4.844526
+
+#+begin_src python :results list
+  outliers=list_pc[(list_pc>(1.5*IQR+Q3)) | (list_pc<(Q1-1.5*IQR))].sort_values()
+  top_pc=df.iloc[outliers.index]["Country"]
+  top_pc.values[-1::-1]
+#+end_src
+
+#+RESULTS:
+ 
+- Qatar
+- Bahrain
+- Kuwait
+- Trinidad and Tobago
+- Brunei Darussalam
+- United Arab Emirates
+- New Caledonia
+- Saudi Arabia
+- Oman
+- Australia
+- Mongolia
+- USA
+- Sint Maarten (Dutch part)
+- Kazakhstan
+- Canada
+- Palau
+- Faeroe Islands
+- Turkmenistan
+
+We have got close to a list of the most aggressive emitter. But there
+is a point to consider here: what if some countries in the list of outliers
+based on Per Capita emission have a very low total emission. In such a
+case, it does not make sense to keep them in our list.
+
+To find countries with very low total emission, we need to do what we
+did for emission Per Capita for total emission and find outliers in
+the lower end of emission range. 
+
+* Total emission analysis
+We store our list of total emission for 2021 for non-zero
+emitters into ~list_total~:
+
+#+begin_src python
+  list_total=df[(df['Year']==2021) & (df['Total']!=0) ]['Total']
+  list_total=list_total[:-2]
+#+end_src
+
+#+RESULTS:
+
+
+To find the top twenty countries with highest total emission:
+
+#+begin_src python :results output
+  total_sorted=list_total.sort_values()
+  print(df.iloc[total_sorted.index[-20:]]['Country'].values[-1::-1])
+#+end_src
+
+#+RESULTS:
+
+: ['China' 'USA' 'India' 'Russia' 'Japan' 'Iran' 'Germany' 'Saudi Arabia'
+:  'Indonesia' 'South Korea' 'Canada' 'Brazil' 'Turkey' 'South Africa'
+:  'Mexico' 'Australia' 'United Kingdom' 'Italy' 'Poland' 'Viet Nam']
+
+* Boxplot for total emission
+
+#+begin_src python :results file
+  fig, ax = plt.subplots()
+  ax.boxplot(list_total)
+  ax.set_facecolor("lightgray")  
+  ax.set(ylabel="Total emission (Mega ton)")
+  fig.set_facecolor("lightgray")  
+  file_name='total_box.svg'
+  plt.savefig(file_name)
+  file_name
+#+end_src
+
+#+RESULTS:
+
+[[file:total_box.svg]]
+
+Looking into the boxplot the following points can be deduced:
+- Data is highly skewed positively.
+- We have a lot of outliers in the higher end of emission range.
+- It seems there are no outliers in the lower end of the boxplot.
+
+Finding outliers:
+
+#+begin_src python :results output
+  Q1=np.percentile(list_total,25)
+  Q3=np.percentile(list_total,75)
+  IQR=Q3-Q1
+  print("Q1 =",Q1, ", Q3 =",Q3,", IQR =", IQR)
+#+end_src
+
+#+RESULTS:
+
+: Q1 = 1.496244 , Q3 = 55.405266 , IQR = 53.909022
+
+#+begin_src python :results list
+  outliers=list_total[list_total<(Q1-1.5*IQR)].sort_values()
+  top_total=df.iloc[outliers.index]["Country"]
+  top_total.values[-1::-1]
+#+end_src
+
+#+RESULTS:
+
+
+Results show that there is no country with low total emission detected
+as outlier. Therefore we increase our threshold to get some countries
+as low total emission. Here we choose the first quartile as such a
+category. This is the first 25% of countries with lowest total
+emission. To find these countries we use the next code block:
+
+#+begin_src python :results output
+  outliers=list_total[list_total<Q1].sort_values()
+  low_total=df.iloc[outliers.index]["Country"]
+  print(low_total.values[-1::-1])
+#+end_src
+
+#+RESULTS:
+
+#+begin_example
+['Fiji' 'Sierra Leone' 'Macao' 'Liberia' 'Barbados' 'Swaziland'
+ 'French Polynesia' 'Aruba' 'Eritrea' 'Timor-Leste' 'Faeroe Islands'
+ 'Burundi' 'Belize' 'Cape Verde' 'Gambia' 'French Guiana'
+ 'Sint Maarten (Dutch part)' 'Somalia' 'Seychelles' 'Bermuda' 'Greenland'
+ 'Saint Lucia' 'Antigua and Barbuda' 'Andorra' 'Djibouti' 'Guinea-Bissau'
+ 'Turks and Caicos Islands' 'Grenada' 'Solomon Islands' 'Comoros' 'Samoa'
+ 'Mayotte' 'Palau' 'Saint Kitts and Nevis' 'Central African Republic'
+ 'Saint Vincent and the Grenadines' 'Vanuatu' 'Tonga' 'Marshall Islands'
+ 'Micronesia (Federated States of)' 'British Virgin Islands' 'Dominica'
+ 'Liechtenstein' 'Anguilla' 'Sao Tome and Principe'
+ 'Bonaire, Saint Eustatius and Saba' 'Cook Islands' 'Kiribati'
+ 'Saint Pierre and Miquelon' 'Nauru' 'Wallis and Futuna Islands'
+ 'Montserrat' 'Saint Helena' 'Niue' 'Tuvalu']
+#+end_example
+
+In the next step, we find if any of the countries in the ~low_total~ are
+present in the ~top_pc~:
+
+#+begin_src python :results output
+  index_temp=[i for i in top_pc.index if (low_total.index==i).any()]
+  print("List of countries that should be excluded:\n", top_pc.loc[index_temp].values)
+
+#+end_src
+
+#+RESULTS:
+
+: List of countries that should be excluded:
+:  ['Faeroe Islands' 'Palau' 'Sint Maarten (Dutch part)']
+
+The three countries identified are small countries with population
+less than one hundred thousand for each. We can safely exclude these
+countries from our list and finally get our refined list of the most
+aggressive carbon emitters:
+
+#+begin_src python :results list
+  top_list=[top_pc.loc[i] for i in top_pc.index if (i not in index_temp)]
+  top_list[-1::-1]
+#+end_src
+
+#+RESULTS:
+
+- Qatar
+- Bahrain
+- Kuwait
+- Trinidad and Tobago
+- Brunei Darussalam
+- United Arab Emirates
+- New Caledonia
+- Saudi Arabia
+- Oman
+- Australia
+- Mongolia
+- USA
+- Kazakhstan
+- Canada
+- Turkmenistan
+
+At the end we came up with a list of 16 most aggressive emitters
+in 2021. The list is in the decreasing order for emission per capita. 
+
+* Notes
+- Outliers can be detected using other metrics.
+- Our choice for neglecting countries in the first quartile of total
+  emission was arbitrarily and can be extended to the second quartile
+  to remove even more countries from the list.
+
