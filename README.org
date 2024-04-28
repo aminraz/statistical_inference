@@ -43,6 +43,7 @@ Global and we won't counted them as country obviously.
 #+end_src
 
 #+RESULTS:
+
 : Total number of countries in the list: 230
 
 With inspecting data frame, we realize there are some countries with
