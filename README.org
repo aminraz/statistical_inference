@@ -24,6 +24,7 @@ Data from a csv file is read and stored into a Pandas data frame:
 #+end_src
 
 #+RESULTS:
+
 : Index(['Country', 'ISO 3166-1 alpha-3', 'Year', 'Total', 'Coal', 'Oil', 'Gas',
 :        'Cement', 'Flaring', 'Other', 'Per Capita'],
 :       dtype='object')
