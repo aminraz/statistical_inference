@@ -1,6 +1,8 @@
 #+property: header-args:python :session *people*
 
-Data used in this analysis come from 
+Data used in this analysis come from Pima Indians Diabetes Database
+available [[https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database][here]].
+
 * importing data from csv file
 
 We start by importing some required packages:
