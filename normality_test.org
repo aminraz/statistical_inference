@@ -22,6 +22,7 @@ Then we read our csv file:
 #+end_src
 
 #+RESULTS:
+
 : Columns: Index(['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin',
 :        'BMI', 'DiabetesPedigreeFunction', 'Age', 'Outcome'],
 :       dtype='object') 
@@ -40,6 +41,7 @@ our data:
 #+end_src
 
 #+RESULTS:
+
 : False
 
 We can say that there in no null value in our dataset which is good
@@ -57,6 +59,7 @@ news. To see how data is distributed we first use histogram plots:
 #+end_src
 
 #+RESULTS:
+
 [[file:all_hist.svg]]
 
 Another common method for inspecting distribution is boxplots:
@@ -72,6 +75,7 @@ Another common method for inspecting distribution is boxplots:
 #+end_src
 
 #+RESULTS:
+
 [[file:all_box.svg]]
 
 Along with boxplots we can see some basic metric describing our data:
@@ -81,6 +85,7 @@ Along with boxplots we can see some basic metric describing our data:
 #+end_src
 
 #+RESULTS:
+
 #+begin_example
        Pregnancies     Glucose  BloodPressure  SkinThickness     Insulin
 count   768.000000  768.000000     768.000000     768.000000  768.000000
@@ -114,6 +119,7 @@ We can find the level of skew as follows:
 #+end_src
 
 #+RESULTS:
+
 #+begin_example
 Pregnancies                 0.901674
 Glucose                     0.173754
@@ -156,6 +162,7 @@ calculating percentiles and plotting a quantile plot:
 #+end_src
 
 #+RESULTS:
+
 [[file:quantile.svg]]
 
 The quantile plot shows that except for extreme tails, distribution of
@@ -171,6 +178,7 @@ In the next step, we do a diagnostic test for normality:
 #+end_src
 
 #+RESULTS:
+
 : (0.035050628654064275, 0.03259424594018)
 
 P-value is the probability of type one error (TIE) with the current
