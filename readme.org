@@ -1,0 +1,202 @@
+#+property: header-args:python :session *people*
+
+Data used in this analysis come from 
+* importing data from csv file
+
+We start by importing some required packages:
+#+begin_src python
+  import pandas as pd
+  import numpy as np
+  import matplotlib.pyplot as plt
+#+end_src
+
+#+RESULTS:
+
+Then we read our csv file:
+
+#+begin_src python :results output
+  df=pd.read_csv("diabetes.csv")
+  print("Columns:",df.columns,"\n","Index: ", df.index)
+#+end_src
+
+#+RESULTS:
+: Columns: Index(['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin',
+:        'BMI', 'DiabetesPedigreeFunction', 'Age', 'Outcome'],
+:       dtype='object') 
+:  Index:  RangeIndex(start=0, stop=768, step=1)
+
+So far we can say that there are 768 subjects in our dataset. There
+are 8 descriptors for each subject that could be related to the
+~outcome~ event in the data. Outcome is the target variable-a subject
+being or not being diagnosed with diabetes.
+
+Let's check in the first step whether we have null values or not in
+our data:
+
+#+begin_src python :results value
+  df.isnull().any().any()
+#+end_src
+
+#+RESULTS:
+: False
+
+We can say that there in no null value in our dataset which is good
+news. To see how data is distributed we first use histogram plots:
+
+#+begin_src python :results file
+  plt.close("all")
+  fig, axs = plt.subplots(4,2, figsize=(6,7))
+  fig.tight_layout()
+  [axs[i//2,i%2].hist(df.iloc[:,i],color='black') for i in range(8)]
+  [axs[i//2,i%2].set(title=df.columns[i]) for i in range(8)]
+  file_name="all_hist.svg"
+  plt.savefig(file_name)
+  file_name
+#+end_src
+
+#+RESULTS:
+[[file:all_hist.svg]]
+
+Another common method for inspecting distribution is boxplots:
+
+#+begin_src python :results file
+  plt.close("all")
+  fig, axs = plt.subplots(4,2, figsize=(6,7))
+  fig.tight_layout()
+  [axs[i//2,i%2].boxplot(df.iloc[:,i], labels=[df.columns[i]]) for i in range(8)]
+  file_name="all_box.svg"
+  plt.savefig(file_name)
+  file_name
+#+end_src
+
+#+RESULTS:
+[[file:all_box.svg]]
+
+Along with boxplots we can see some basic metric describing our data:
+
+#+begin_src python :results output
+  print(df.iloc[:,0:5].describe(),"\n\n",df.iloc[:,5:8].describe())
+#+end_src
+
+#+RESULTS:
+#+begin_example
+       Pregnancies     Glucose  BloodPressure  SkinThickness     Insulin
+count   768.000000  768.000000     768.000000     768.000000  768.000000
+mean      3.845052  120.894531      69.105469      20.536458   79.799479
+std       3.369578   31.972618      19.355807      15.952218  115.244002
+min       0.000000    0.000000       0.000000       0.000000    0.000000
+25%       1.000000   99.000000      62.000000       0.000000    0.000000
+50%       3.000000  117.000000      72.000000      23.000000   30.500000
+75%       6.000000  140.250000      80.000000      32.000000  127.250000
+max      17.000000  199.000000     122.000000      99.000000  846.000000 
+
+               BMI  DiabetesPedigreeFunction         Age
+count  768.000000                768.000000  768.000000
+mean    31.992578                  0.471876   33.240885
+std      7.884160                  0.331329   11.760232
+min      0.000000                  0.078000   21.000000
+25%     27.300000                  0.243750   24.000000
+50%     32.000000                  0.372500   29.000000
+75%     36.600000                  0.626250   41.000000
+max     67.100000                  2.420000   81.000000
+#+end_example
+
+Boxplots show how data is distributed. They show the level of data
+being skewed into one direction and the number of outliers in them
+which are shown by filers in the boxplots.
+
+We can find the level of skew as follows:
+
+#+begin_src python :results value
+  df.skew()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Pregnancies                 0.901674
+Glucose                     0.173754
+BloodPressure              -1.843608
+SkinThickness               0.109372
+Insulin                     2.272251
+BMI                        -0.428982
+DiabetesPedigreeFunction    1.919911
+Age                         1.129597
+Outcome                     0.635017
+dtype: float64
+#+end_example
+
+There are two variables in out dataset that can be close to a normal
+distribution, namely Glucose and BMI. Their histogram is unimodal and
+their skew level is close to 0. So, we would like to test this
+hypothesis that these variables come from a random population or not.
+
+In our statistical test H0 as the null hypothesis is the data coming
+from a normal distribution and H1 as the alternative hypothesis is
+just the negation of H0.
+
+We start by BMI. Looking into its boxplot and data describing dataset,
+we can see that there is an outlier in this variable with the value of
+zero. Zero for BMI does not make sense as a proper value. So, we
+ignore this row of data in our dataset as a faulty input.
+
+As our first analysis we can take a closer look into BMI through
+calculating percentiles and plotting a quantile plot:
+
+#+begin_src python :results file
+  plt.close("all")
+  file_name="quantile.svg"
+  fig, ax=plt.subplots()
+  ax.plot(np.percentile(df[df["BMI"]!=0]["BMI"], range(0,101)),"ko")
+  ax.set(xlabel="quantile index", ylabel="BMI")
+  ax.grid()
+  plt.savefig(file_name)
+  file_name
+#+end_src
+
+#+RESULTS:
+[[file:quantile.svg]]
+
+The quantile plot shows that except for extreme tails, distribution of
+data is fairly uniform.
+
+In the next step, we do a diagnostic test for normality:
+
+#+begin_src python :results value pp
+  from statsmodels.stats.diagnostic import lilliefors
+  ksstat, pvalue = lilliefors(df[df["BMI"]!=0]["BMI"])
+  (ksstat, pvalue)
+
+#+end_src
+
+#+RESULTS:
+: (0.035050628654064275, 0.03259424594018)
+
+P-value is the probability of type one error (TIE) with the current
+evidence. TIE is the probability of rejecting the null hypothesis when
+it is true. The probability of TIE occurring is shown with $\alpha$
+and is the level of significance of our statistical test. Lower
+$\alpha$ means rejecting H0 becomes harder. Commonly $\alpha$ of 0.05
+is considered enough for most cases of evaluating a null
+hypothesis. Here 0.05 is the level of significance.
+
+The next step is to see the evidence is enough to reject the null
+hypothesis with the chosen level of significance ($\alpha$) or
+not. The lower the $\alpha$ gets, the stronger the evidence should
+become if we want to reject the null hypothesis. If p-value is lower
+than $\alpha$, it means that evidence is not enough to support H0 at
+$\alpha$ level of significance. In other words, with current evidence,
+you can tolerate to the level of p-value the risk of rejecting H0
+while it is true. When $\alpha$ get bigger than p-value, the risk
+becomes bigger than what evidence can support. Therefore we reject the
+null hypothesis. 
+
+Here we used a diagnostic test for normality called Lillefors. This
+test compares empirical comulative density function of data with the
+corresponding value for a normal distribution. A Z-score is made using
+mean and standard deviation of the sample to do this.
+
+Looking into the results we get from this diagnostic test tells us
+that at 5% level of significance, our null hypothesis is rejected. The
+p-value of the test is around 3% which is close to 5%. If one wants to
+lower the level of significance, we then fail to reject the null
+hypothesis.
