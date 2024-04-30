@@ -1,0 +1,11 @@
+ In this repository, some mini projects are presented in the field of
+ statistical inference and data analysis. Clicking on each title below
+ takes you to the project.
+
+ - [[file:emission_CO2][Explanatory data analysis and insights]]
+   In this project a list of most aggressive CO$_2$ emitters of 2021
+   is identified.
+ - [[file:normality_test.org][Doing a normality test]]
+   Data from a cohort of diabetic women is analyzed and hypothesis
+   testing was used to test whether some descriptors come from a normal
+   population or not. 
