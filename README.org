@@ -4,7 +4,7 @@
 
  - [[file:emission_CO2.org][Explanatory data analysis and insights]]
 
-   In this project a list of most aggressive CO$$_2$$ emitters of 2021
+   In this project a list of most aggressive CO2 emitters of 2021
    is identified.
  - [[file:normality_test.org][Doing a normality test]]
 
