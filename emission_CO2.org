@@ -1,6 +1,6 @@
 #+property: header-args:python :session *emission* 
 Carbon emission data in this analysis come from the Global Carbon
-Project's fossil CO2 emission dataset:2022 release. The dataset is
+Project's fossil CO_{2} emission dataset:2022 release. The dataset is
 available in Kaggle through this [[https://www.kaggle.com/datasets/thedevastator/global-fossil-co2-emissions-by-country-2002-2022/code][link]].
 
 In this analysis, we use data for carbon emission for all countries
